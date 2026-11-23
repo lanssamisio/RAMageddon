@@ -2,7 +2,8 @@ import pygame
 
 from config import TILE, LARGURA, ALTURA
 
-# Cada tecla -> direção (x, y)
+# Mapeia teclas para uma direção cardinal.
+# O valor é (x, y), onde y negativo aponta para cima na tela.
 TECLAS_DIRECAO = {
     pygame.K_UP: (0, -1), pygame.K_w: (0, -1),
     pygame.K_DOWN: (0, 1), pygame.K_s: (0, 1),
@@ -18,37 +19,46 @@ class Jogador:
     DURACAO_ATAQUE = 0.25   # segundos
 
     def __init__(self, x, y):
+        # rect é usado para colisão/desenho; posicao guarda movimento com float.
         self.rect = pygame.Rect(0, 0, self.TAMANHO, self.TAMANHO)
-        self.posicao = pygame.Vector2(x, y)  # posição exata (com decimais)
+        self.posicao = pygame.Vector2(x, y)
         self.rect.topleft = (round(x), round(y))
-        self.virado = pygame.Vector2(0, 1)   # começa olhando para baixo
-        self.pilha_teclas = []               # teclas seguradas, na ordem em que foram apertadas
+
+        # Direção atual do olhar/ataque.
+        self.virado = pygame.Vector2(0, 1)
+
+        # Pilha de teclas de movimento para priorizar a última tecla pressionada.
+        self.pilha_teclas = []
         self.tem_espada = False
         self.atacando = False
         self.timer_ataque = 0.0
 
     # --- Entrada ---
     def tratar_evento(self, evento):
+        """Processa eventos pontuais, como pressionar tecla."""
         if evento.type != pygame.KEYDOWN:
             return
+
         if evento.key in TECLAS_DIRECAO:
+            # A tecla mais recente fica no fim da pilha e ganha prioridade.
             self.pilha_teclas.append(evento.key)
         elif evento.key in TECLAS_ATAQUE:
             self.atacar()
 
     def atualizar_teclas(self, teclas):
-        """Mantém só as teclas que ainda estão realmente pressionadas."""
-        self.pilha_teclas = [k for k in self.pilha_teclas if teclas[k]]
+        """Remove da pilha teclas que foram soltas."""
+        self.pilha_teclas = [tecla for tecla in self.pilha_teclas if teclas[tecla]]
 
     def atacar(self):
+        """Inicia o ataque se o jogador tiver espada e não estiver atacando."""
         if self.tem_espada and not self.atacando:
             self.atacando = True
             self.timer_ataque = self.DURACAO_ATAQUE
 
     # --- Lógica ---
     def atualizar(self, dt, sala):
+        # Durante o ataque, o jogador fica parado até o timer acabar.
         if self.atacando:
-            # Como no Zelda: durante o golpe o personagem fica parado
             self.timer_ataque -= dt
             if self.timer_ataque <= 0:
                 self.atacando = False
@@ -56,11 +66,12 @@ class Jogador:
 
         direcao = pygame.Vector2(0, 0)
         if self.pilha_teclas:
-            # A última tecla apertada manda: nunca anda na diagonal
+            # Usa a última tecla pressionada para evitar movimento diagonal.
             direcao = pygame.Vector2(TECLAS_DIRECAO[self.pilha_teclas[-1]])
             self.virado = direcao.copy()
 
-        # Move em X e resolve colisão
+        # Move no eixo X e resolve colisões antes de mover no eixo Y.
+        # Isso evita que o jogador "grude" em cantos de forma estranha.
         self.posicao.x += direcao.x * self.VELOCIDADE * dt
         self.rect.x = round(self.posicao.x)
         for tile in sala.tiles_solidos_perto(self.rect):
@@ -71,7 +82,7 @@ class Jogador:
                     self.rect.left = tile.right
                 self.posicao.x = self.rect.x
 
-        # Move em Y e resolve colisão
+        # Depois repete o processo no eixo Y.
         self.posicao.y += direcao.y * self.VELOCIDADE * dt
         self.rect.y = round(self.posicao.y)
         for tile in sala.tiles_solidos_perto(self.rect):
@@ -92,6 +103,9 @@ class Jogador:
             self.posicao.y = TILE
         elif lado == "sul":
             self.posicao.y = ALTURA - TILE - self.TAMANHO
+        elif lado == "centro":
+            self.posicao.x = LARGURA // 2 - self.TAMANHO // 2
+            self.posicao.y = ALTURA // 2 - self.TAMANHO // 2
         self.rect.topleft = (round(self.posicao.x), round(self.posicao.y))
 
     def hitbox_espada(self):
