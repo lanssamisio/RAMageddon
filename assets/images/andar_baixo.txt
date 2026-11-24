@@ -1,0 +1,6 @@
+andar pra frente1,0,0,16,16
+andar pra frente2,0,17,16,16
+andar pra frente3,17,0,16,16
+andar pra frente4,17,17,16,16
+andar pra frente5,0,34,16,16
+andar pra frente6,17,34,16,16

@@ -1,13 +1,16 @@
+"""Salas do jogo: dados, mapa de colisão, itens e portal."""
+
+import math
 from pathlib import Path
 
 import pygame
 
-from config import (
+from .config import (
     TILE, COLUNAS, LINHAS, LARGURA, ALTURA,
     ABERTURA_H, ABERTURA_V, ESPESSURA_BORDA_EO, ESPESSURA_BORDA_NS,
     COR_PAREDE, DEBUG_COLISAO,
 )
-from sprites import fatiar_spritesheet
+from .sprites import fatiar_spritesheet
 
 # O "mapa do mundo". Cada sala diz para onde cada saída leva.
 #
@@ -15,7 +18,6 @@ from sprites import fatiar_spritesheet
 #                  ^
 #   [1] -> [2] -> [3]
 #
-# "bloqueadas": saídas fechadas até algo acontecer (ex.: pegar a espada).
 # "itens": lista de (tipo, x, y) em pixels.
 DADOS_SALAS = {
     1: {
@@ -32,6 +34,8 @@ DADOS_SALAS = {
             "destino": 2,
             "lado_entrada": "centro",
             "ativo": False,
+            # A folha tem frames de 384x341; 80x71 mantém essa proporção.
+            "escala": (80, 71),
         },
     },
     2: {
@@ -63,7 +67,11 @@ DADOS_SALAS = {
 
 
 def gerar_mapa(saidas):
-    """Sala vazia: paredes na borda e uma abertura em cada saída."""
+    """Sala vazia: paredes na borda e uma abertura em cada saída.
+
+    O mapa é uma lista de strings: '#' é parede e '.' é chão. Assim a colisão
+    vira uma simples consulta por linha/coluna.
+    """
     mapa = []
 
     for linha in range(LINHAS):
@@ -99,22 +107,26 @@ class Item:
     def desenhar(self, superficie):
         if self.coletado:
             return
-        cx, cy = self.rect.center
+        centro_x, centro_y = self.rect.center
         if self.tipo == "espada":
             # Pedestal de pedra
-            pygame.draw.rect(superficie, (110, 110, 120), (cx - 18, cy + 4, 36, 18))
-            pygame.draw.rect(superficie, (80, 80, 90), (cx - 18, cy + 4, 36, 18), 2)
-            # Espada flutuando um pouquinho (sobe e desce)
-            balanco = round(2 * pygame.math.Vector2(0, 1).rotate(pygame.time.get_ticks() / 4).y)
-            cy -= 6 + balanco
-            pygame.draw.rect(superficie, (220, 225, 235), (cx - 3, cy - 14, 6, 18))   # lâmina
-            pygame.draw.rect(superficie, (230, 190, 60), (cx - 8, cy + 4, 16, 4))     # guarda
-            pygame.draw.rect(superficie, (130, 80, 40), (cx - 2, cy + 8, 4, 8))       # cabo
+            pygame.draw.rect(superficie, (110, 110, 120), (centro_x - 18, centro_y + 4, 36, 18))
+            pygame.draw.rect(superficie, (80, 80, 90), (centro_x - 18, centro_y + 4, 36, 18), 2)
+
+            # A espada sobe e desce. O tempo vem do relógio do pygame (não de um
+            # contador de frames), então o balanço não muda com o FPS.
+            balanco = round(2 * math.cos(math.radians(pygame.time.get_ticks() / 4)))
+            centro_y -= 6 + balanco
+            pygame.draw.rect(superficie, (220, 225, 235), (centro_x - 3, centro_y - 14, 6, 18))   # lâmina
+            pygame.draw.rect(superficie, (230, 190, 60), (centro_x - 8, centro_y + 4, 16, 4))     # guarda
+            pygame.draw.rect(superficie, (130, 80, 40), (centro_x - 2, centro_y + 8, 4, 8))       # cabo
         else:
             pygame.draw.rect(superficie, (255, 0, 255), self.rect)  # item desconhecido
 
 
 class Portal:
+    """Portal animado que leva o jogador para outra sala."""
+
     def __init__(
         self,
         spritesheet,
@@ -124,7 +136,7 @@ class Portal:
         destino,
         lado_entrada,
         ativo=False,
-        escala=(96, 96),
+        escala=(80, 71),
         duracao_frame=0.12,
         raiz_projeto=None,
     ):
@@ -148,6 +160,7 @@ class Portal:
             return
 
         self.timer_animacao += dt
+        # while (e não if) para não perder frames se o jogo travar por um momento.
         while self.timer_animacao >= self.duracao_frame:
             self.timer_animacao -= self.duracao_frame
             self.indice_frame = (self.indice_frame + 1) % len(self.frames)
@@ -164,7 +177,6 @@ class Sala:
         self.nome = dados["nome"]
         self.piso = dados["piso"]
         self.saidas = dados["saidas"]
-        self.bloqueadas = set(dados.get("bloqueadas", []))
         self.itens = [Item(*i) for i in dados.get("itens", [])]
 
         self.portal = None
@@ -181,21 +193,15 @@ class Sala:
             imagem = pygame.image.load(str(caminho)).convert()
             self.fundo = pygame.transform.scale(imagem, (LARGURA, ALTURA))
 
-        self.mapa = []
-        self.atualizar_mapa()
-
-    def saidas_abertas(self):
-        return {lado: destino for lado, destino in self.saidas.items()
-                if lado not in self.bloqueadas}
-
-    def atualizar_mapa(self):
-        self.mapa = gerar_mapa(self.saidas_abertas())
-
-    def desbloquear(self, lado):
-        self.bloqueadas.discard(lado)
-        self.atualizar_mapa()
+        # O mapa é gerado uma vez: as saídas de uma sala nunca mudam.
+        self.mapa = gerar_mapa(self.saidas)
 
     def tiles_solidos_perto(self, rect):
+        """Devolve só as tiles sólidas que encostam no retângulo.
+
+        Procurar no mapa inteiro a cada frame seria desperdício; olhamos apenas
+        as linhas/colunas que o retângulo ocupa (mais uma de margem).
+        """
         resultado = []
         for linha in range(rect.top // TILE, rect.bottom // TILE + 1):
             for coluna in range(rect.left // TILE, rect.right // TILE + 1):
@@ -218,6 +224,7 @@ class Sala:
                             (indice_coluna * TILE, indice_linha * TILE, TILE, TILE),
                         )
 
+        # Modo de ajuste: desenha um vermelho translúcido sobre as tiles sólidas.
         if DEBUG_COLISAO:
             overlay = pygame.Surface((TILE, TILE), pygame.SRCALPHA)
             overlay.fill((255, 0, 0, 90))
@@ -234,12 +241,13 @@ class Sala:
 
 
 def criar_salas(raiz_projeto=None):
+    """Monta todas as salas uma vez, no início do jogo."""
     raiz = Path(raiz_projeto) if raiz_projeto else Path(__file__).resolve().parent.parent
     return {id_sala: Sala(id_sala, dados, raiz) for id_sala, dados in DADOS_SALAS.items()}
 
 
 def verificar_saida(rect):
-    """Se o jogador passou da borda da tela, diz por qual lado."""
+    """Se o jogador passou do centro da borda da tela, diz por qual lado."""
     if rect.centerx < 0:
         return "oeste"
     if rect.centerx > LARGURA:
