@@ -1,4 +1,8 @@
+"""Constantes gerais do jogo."""
+
 TILE = 32
+# A arte é desenhada em 16x16 e ampliada para o tamanho do tile (32 / 16 = 2x)
+ESCALA = TILE // 16
 COLUNAS, LINHAS = 25, 20
 LARGURA, ALTURA = COLUNAS * TILE, LINHAS * TILE
 FPS = 60

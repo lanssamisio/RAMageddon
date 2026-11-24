@@ -1,6 +1,27 @@
+"""O personagem: movimento em 4 direções (sem diagonal) e animação de andar."""
+
 import pygame
 
+from carregador import carregar_quadros
 from config import TILE, LARGURA, ALTURA
+
+# --- Animações feitas por você, uma direção de cada vez -----------------------
+# Chave: direção (x, y) -> (0, 1) baixo | (0, -1) cima | (-1, 0) esquerda | (1, 0) direita
+#   "imagem": nome dos arquivos em assets, sem extensão (precisa de <nome>.png e <nome>.txt)
+#   "parado": número do quadro quando o personagem está parado
+#   "ordem":  sequência de quadros ao andar
+# Os quadros são numerados pela ORDEM DAS LINHAS do .txt, começando em 0
+# (a primeira linha do .txt é o quadro 0, a segunda é o 1, e assim por diante).
+ANIMACOES = {
+    (0, 1): {"imagem": "andar_baixo", "parado": 0, "ordem": [2, 0, 4, 0]},
+    # Quando tiver as outras direções, descomente e ajuste:
+    # (0, -1): {"imagem": "andar_cima",   "parado": 0, "ordem": [2, 0, 4, 0]},
+    # (-1, 0): {"imagem": "andar_esquerda", "parado": 0, "ordem": [2, 0, 4, 0]},
+    # (1, 0):  {"imagem": "andar_direita",  "parado": 0, "ordem": [2, 0, 4, 0]},
+}
+# Enquanto uma direção não tiver animação própria, o jogo usa a animação desta direção
+DIRECAO_PADRAO = (0, 1)
+QUADROS_POR_SEGUNDO = 8
 
 # Cada tecla -> direção (x, y)
 TECLAS_DIRECAO = {
@@ -9,13 +30,11 @@ TECLAS_DIRECAO = {
     pygame.K_LEFT: (-1, 0), pygame.K_a: (-1, 0),
     pygame.K_RIGHT: (1, 0), pygame.K_d: (1, 0),
 }
-TECLAS_ATAQUE = (pygame.K_SPACE, pygame.K_j)
 
 
 class Jogador:
     TAMANHO = 24
-    VELOCIDADE = 400        # pixels por segundo
-    DURACAO_ATAQUE = 0.25   # segundos
+    VELOCIDADE = 160        # pixels por segundo
 
     def __init__(self, x, y):
         self.rect = pygame.Rect(0, 0, self.TAMANHO, self.TAMANHO)
@@ -23,42 +42,29 @@ class Jogador:
         self.rect.topleft = (round(x), round(y))
         self.virado = pygame.Vector2(0, 1)   # começa olhando para baixo
         self.pilha_teclas = []               # teclas seguradas, na ordem em que foram apertadas
-        self.tem_espada = False
-        self.atacando = False
-        self.timer_ataque = 0.0
+        self.andando = False
+        self.tempo_anim = 0.0
 
     # --- Entrada ---
     def tratar_evento(self, evento):
-        if evento.type != pygame.KEYDOWN:
-            return
-        if evento.key in TECLAS_DIRECAO:
+        if evento.type == pygame.KEYDOWN and evento.key in TECLAS_DIRECAO:
             self.pilha_teclas.append(evento.key)
-        elif evento.key in TECLAS_ATAQUE:
-            self.atacar()
 
     def atualizar_teclas(self, teclas):
         """Mantém só as teclas que ainda estão realmente pressionadas."""
         self.pilha_teclas = [k for k in self.pilha_teclas if teclas[k]]
 
-    def atacar(self):
-        if self.tem_espada and not self.atacando:
-            self.atacando = True
-            self.timer_ataque = self.DURACAO_ATAQUE
-
     # --- Lógica ---
     def atualizar(self, dt, sala):
-        if self.atacando:
-            # Como no Zelda: durante o golpe o personagem fica parado
-            self.timer_ataque -= dt
-            if self.timer_ataque <= 0:
-                self.atacando = False
-            return
-
         direcao = pygame.Vector2(0, 0)
         if self.pilha_teclas:
             # A última tecla apertada manda: nunca anda na diagonal
             direcao = pygame.Vector2(TECLAS_DIRECAO[self.pilha_teclas[-1]])
             self.virado = direcao.copy()
+
+        # Animação: só "anda" enquanto há tecla de direção apertada
+        self.andando = direcao.length() > 0
+        self.tempo_anim = self.tempo_anim + dt if self.andando else 0.0
 
         # Move em X e resolve colisão
         self.posicao.x += direcao.x * self.VELOCIDADE * dt
@@ -94,25 +100,35 @@ class Jogador:
             self.posicao.y = ALTURA - TILE - self.TAMANHO
         self.rect.topleft = (round(self.posicao.x), round(self.posicao.y))
 
-    def hitbox_espada(self):
-        """Área que a espada acerta (usada depois para dar dano nos inimigos)."""
-        comprimento, largura = 26, 10
-        if self.virado.x != 0:
-            area = pygame.Rect(0, 0, comprimento, largura)
-        else:
-            area = pygame.Rect(0, 0, largura, comprimento)
-        centro = pygame.Vector2(self.rect.center) + self.virado * (self.TAMANHO / 2 + comprimento / 2)
-        area.center = (round(centro.x), round(centro.y))
-        return area
-
     # --- Desenho ---
-    def desenhar(self, superficie):
-        pygame.draw.rect(superficie, (200, 50, 50), self.rect)
-        # Quadradinho amarelo mostra para onde o personagem está virado
-        marca = pygame.Vector2(self.rect.center) + self.virado * 10
-        pygame.draw.rect(superficie, (255, 220, 0), (marca.x - 4, marca.y - 4, 8, 8))
+    def _chave(self):
+        return (round(self.virado.x), round(self.virado.y))
 
-        if self.atacando:
-            area = self.hitbox_espada()
-            pygame.draw.rect(superficie, (225, 230, 240), area)
-            pygame.draw.rect(superficie, (130, 80, 40), area, 1)
+    def _quadro_atual(self):
+        """Escolhe a imagem: animação da direção atual ou, se não houver, a padrão."""
+        for direcao in (self._chave(), DIRECAO_PADRAO):
+            animacao = ANIMACOES.get(direcao)
+            if not animacao:
+                continue
+            quadros = carregar_quadros(animacao["imagem"])
+            if not quadros:
+                continue
+            if self.andando:
+                ordem = animacao["ordem"]
+                indice = ordem[int(self.tempo_anim * QUADROS_POR_SEGUNDO) % len(ordem)]
+            else:
+                indice = animacao["parado"]
+            return quadros[indice]
+        return None
+
+    def desenhar(self, superficie):
+        quadro = self._quadro_atual()
+        if quadro:
+            # O sprite é maior que a hitbox: os pés ficam na base dela
+            posicao = quadro.get_rect(midbottom=(self.rect.centerx, self.rect.bottom + 4))
+            superficie.blit(quadro, posicao)
+        else:
+            # Sem imagem: quadrado vermelho e um quadradinho amarelo mostrando a direção
+            pygame.draw.rect(superficie, (200, 50, 50), self.rect)
+            marca = pygame.Vector2(self.rect.center) + self.virado * 10
+            pygame.draw.rect(superficie, (255, 220, 0), (marca.x - 4, marca.y - 4, 8, 8))
