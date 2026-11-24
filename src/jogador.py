@@ -12,12 +12,12 @@ from .config import TILE, LARGURA, ALTURA
 #   "ordem":  sequência de quadros enquanto anda (os números vêm do .txt, começando em 0).
 ANIMACOES = {
     (0, 1): {"imagem": "andar_baixo", "parado": 0, "ordem": [2, 0, 4, 0]},
+    (0, -1): {"imagem": "andar_cima", "parado": 0, "ordem": [2, 0, 4, 0]},
 }
 
-# Enquanto as outras direções não têm sprite própria, espelhamos a de baixo:
+# Enquanto as direções laterais não têm sprite própria, espelhamos a de baixo:
 # (espelhar horizontalmente, espelhar verticalmente).
 ESPELHOS = {
-    (0, -1): (False, True),   # cima: inverte de ponta a ponta
     (-1, 0): (True, False),   # esquerda
     (1, 0): (True, False),    # direita
 }

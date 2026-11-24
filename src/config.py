@@ -40,6 +40,6 @@ OPOSTO = {"norte": "sul", "sul": "norte", "leste": "oeste", "oeste": "leste"}
 BLOCOS = [1, 2, 4, 8, 16, 32, 64]
 DURACAO_TRANSICAO = 0.45  # segundos para pixelar e para voltar ao normal
 
-# Mostra as tiles sólidas por cima do mapa para ajustar colisões.
-# Desligado na versão jogável (ligue só enquanto estiver ajustando o mapa).
-DEBUG_COLISAO = False
+# --- Debug ---
+# As opções ficam em src/debug.py. Durante o jogo, use:
+# F1 = ligar/desligar tudo; F2 = colisão; F3 = grade; F4 = entidades; F5 = info.

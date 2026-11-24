@@ -4,6 +4,7 @@ import pygame
 
 from src.carregador import relatorio
 from src.config import LARGURA, ALTURA, FPS, TILE, OPOSTO
+from src.debug import Debug
 from src.jogador import Jogador, ANIMACOES
 from src.salas import criar_salas, verificar_saida
 from src.transicao import Transicao
@@ -38,6 +39,7 @@ def main():
     sala = salas[1]
     jogador = Jogador(12 * TILE, 15 * TILE)
     transicao = Transicao()
+    debug = Debug()
 
     mensagem = ""
     timer_mensagem = 0.0
@@ -53,7 +55,9 @@ def main():
             if evento.type == pygame.QUIT:
                 rodando = False
             elif evento.type == pygame.KEYDOWN:
-                jogador.tratar_evento(evento)
+                # F1..F5 são do debug; as outras teclas vão para o jogador.
+                if not debug.tratar_tecla(evento.key):
+                    jogador.tratar_evento(evento)
 
         # Limpa teclas de movimento que já foram soltas.
         jogador.atualizar_teclas(pygame.key.get_pressed())
@@ -101,6 +105,7 @@ def main():
         # A ordem importa: sala/fundo primeiro, depois jogador/HUD/mensagens.
         sala.desenhar(canvas)
         jogador.desenhar(canvas)
+        debug.desenhar(canvas, fonte, jogador, sala, relogio, dt, transicao)
         canvas.blit(fonte.render(sala.nome, True, (255, 255, 255)), (10, 8))
 
         if sala.id == 1 and not jogador.tem_espada:

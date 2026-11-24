@@ -8,7 +8,7 @@ import pygame
 from .config import (
     TILE, COLUNAS, LINHAS, LARGURA, ALTURA,
     ABERTURA_H, ABERTURA_V, ESPESSURA_BORDA_EO, ESPESSURA_BORDA_NS,
-    COR_PAREDE, DEBUG_COLISAO,
+    COR_PAREDE,
 )
 from .sprites import fatiar_spritesheet
 
@@ -224,14 +224,7 @@ class Sala:
                             (indice_coluna * TILE, indice_linha * TILE, TILE, TILE),
                         )
 
-        # Modo de ajuste: desenha um vermelho translúcido sobre as tiles sólidas.
-        if DEBUG_COLISAO:
-            overlay = pygame.Surface((TILE, TILE), pygame.SRCALPHA)
-            overlay.fill((255, 0, 0, 90))
-            for indice_linha, linha in enumerate(self.mapa):
-                for indice_coluna, simbolo in enumerate(linha):
-                    if simbolo == "#":
-                        superficie.blit(overlay, (indice_coluna * TILE, indice_linha * TILE))
+        # A depuração agora fica em src/debug.py: o main chama Debug.desenhar().
 
         if self.portal:
             self.portal.desenhar(superficie)
