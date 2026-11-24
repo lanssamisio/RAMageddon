@@ -1,9 +1,3 @@
-"""Carregador de imagens (arquivo de código: fica ao lado do main.py).
-
-Procura os arquivos PNG na PASTA "assets" (que guarda só imagens). Se a imagem
-não existir, devolve None e o jogo usa um desenho provisório no lugar.
-A arte é ampliada por ESCALA, sem borrar os pixels.
-"""
 
 import os
 
@@ -36,22 +30,6 @@ def carregar(nome):
 
     _cache[nome] = imagem
     return imagem
-
-
-def relatorio():
-    """Linhas de texto dizendo quais imagens o jogo encontrou (ajuda a achar erros de pasta ou nome)."""
-    linhas = [f"Pasta de imagens: {PASTA}"]
-    if not os.path.isdir(PASTA):
-        linhas.append("  PROBLEMA: essa pasta nao existe! Crie a pasta 'assets' ao lado do main.py.")
-        return linhas
-    esperados = ["andar_baixo.png", "andar_baixo.txt"]
-    for nome in esperados:
-        achou = os.path.exists(os.path.join(PASTA, nome))
-        linhas.append(f"  [{'ok' if achou else 'FALTA'}] {nome}")
-    extras = sorted(set(os.listdir(PASTA)) - set(esperados))
-    if extras:
-        linhas.append("  Outros arquivos na pasta: " + ", ".join(extras))
-    return linhas
 
 
 # --- Folhas de sprites com arquivo de coordenadas ---------------------------
@@ -120,3 +98,12 @@ def carregar_quadros(nome):
 
     _cache_quadros[nome] = quadros
     return quadros
+
+def relatorio():
+    """Devolve uma lista de mensagens sobre os arquivos encontrados na pasta assets."""
+    linhas = [f"Pasta de imagens: {PASTA}"]
+    if os.path.exists(PASTA):
+        arquivos = sorted(os.listdir(PASTA))
+        for arq in arquivos:
+            linhas.append(f"  [ok] {arq}")
+    return linhas

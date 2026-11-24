@@ -15,7 +15,7 @@ from config import TILE, LARGURA, ALTURA
 ANIMACOES = {
     (0, 1): {"imagem": "andar_baixo", "parado": 0, "ordem": [2, 0, 4, 0]},
     # Quando tiver as outras direções, descomente e ajuste:
-    # (0, -1): {"imagem": "andar_cima",   "parado": 0, "ordem": [2, 0, 4, 0]},
+    (0, -1): {"imagem": "andar_cima",   "parado": 0, "ordem": [2, 0, 4, 0]},
     # (-1, 0): {"imagem": "andar_esquerda", "parado": 0, "ordem": [2, 0, 4, 0]},
     # (1, 0):  {"imagem": "andar_direita",  "parado": 0, "ordem": [2, 0, 4, 0]},
 }

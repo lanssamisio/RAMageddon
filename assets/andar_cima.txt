@@ -1,0 +1,6 @@
+andar_cima1,0,0,16,16
+andar_cima2,0,17,16,16
+andar_cima3,17,0,16,16
+andar_cima4,17,17,16,16
+andar_cima5,0,34,16,16
+andar_cima6,17,34,16,16

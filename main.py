@@ -1,5 +1,3 @@
-"""Meu Zelda - ponto de entrada. Rode com: python main.py"""
-
 import pygame
 
 from carregador import relatorio
