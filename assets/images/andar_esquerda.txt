@@ -1,0 +1,6 @@
+andar_esquerda1,0,0,16,16
+andar_esquerda2,0,17,16,16
+andar_esquerda3,17,0,16,16
+andar_esquerda4,17,17,16,16
+andar_esquerda5,0,34,16,16
+andar_esquerda6,17,34,16,16

@@ -13,6 +13,8 @@ from .config import TILE, LARGURA, ALTURA
 ANIMACOES = {
     (0, 1): {"imagem": "andar_baixo", "parado": 0, "ordem": [2, 0, 4, 0]},
     (0, -1): {"imagem": "andar_cima", "parado": 0, "ordem": [2, 0, 4, 0]},
+    (-1, 0): {"imagem": "andar_esquerda", "parado": 0, "ordem": [2, 0, 4, 0]},
+    (1, 0): {"imagem": "andar_direita", "parado": 0, "ordem": [2, 0, 4, 0]},
 }
 
 # Enquanto as direções laterais não têm sprite própria, espelhamos a de baixo:
@@ -36,7 +38,7 @@ TECLAS_ATAQUE = (pygame.K_SPACE, pygame.K_j)
 
 class Jogador:
     TAMANHO = 24
-    VELOCIDADE = 400        # pixels por segundo
+    VELOCIDADE = 200        # pixels por segundo
     DURACAO_ATAQUE = 0.25   # segundos
 
     def __init__(self, x, y):

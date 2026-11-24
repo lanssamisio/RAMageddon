@@ -1,0 +1,6 @@
+andar_direita1,0,0,16,16
+andar_direita2,0,17,16,16
+andar_direita3,17,0,16,16
+andar_direita4,17,17,16,16
+andar_direita5,0,34,16,16
+andar_direita6,17,34,16,16
