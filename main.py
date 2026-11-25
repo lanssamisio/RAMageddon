@@ -18,6 +18,16 @@ def desenhar_texto(superficie, fonte, texto, centro_x, y, cor=(255, 255, 255)):
     superficie.blit(sombra, (x + 2, y + 2))
     superficie.blit(imagem, (x, y))
 
+# Hud dos colecion
+def desenhar_coletaveis(superficie, fonte, salas):
+    itens = [item for sala in salas.values() for item in sala.itens]
+    texto = fonte.render(
+        f"Coletaveis: {sum(item.coletado for item in itens)}/{len(itens)}",
+        True, (255, 255, 255),
+    )
+    posicao = texto.get_rect(bottomleft=(10, ALTURA - 10))
+    superficie.blit(texto, posicao)
+
 
 def main():
     # Avisa no terminal se faltou algum arquivo de sprite (ajuda a achar erro).
@@ -106,6 +116,7 @@ def main():
         sala.desenhar(canvas)
         jogador.desenhar(canvas)
         debug.desenhar(canvas, fonte, jogador, sala, relogio, dt, transicao)
+        desenhar_coletaveis(canvas, fonte, salas)
         canvas.blit(fonte.render(sala.nome, True, (255, 255, 255)), (10, 8))
 
         if sala.id == 1 and not jogador.tem_espada:
