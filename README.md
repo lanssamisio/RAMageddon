@@ -1,6 +1,6 @@
-# PyZelda
+# RAMargedom
 
-Jogo 2D inspirado em Zelda desenvolvido em Python com Pygame. [......]
+Jogo 2D inspirado em Zelda, desenvolvido em Python com Pygame-ce. [......]
 
 Projeto desenvolvido para a disciplina **Introdução à Programação** do Centro de Informática (CIn), Universidade Federal de Pernambuco (UFPE).
 
@@ -8,9 +8,9 @@ Projeto desenvolvido para a disciplina **Introdução à Programação** do Cent
 
 - Tela fixa de **800 x 600 pixels** a **60 FPS**.
 - Movimento em quatro direções com animação baseada em tempo.
-- Colisões por uma grade de tiles de 25 x 25 pixels.
-- Espada colecionável que libera um portal animado.
-- Navegação entre seis salas por bordas abertas e pelo portal.
+- Colisões por uma grade de tiles de 25 x 25 pixels, incluindo paredes internas invisíveis.
+- Espada colecionável que libera o portal animado da sala inicial.
+- Navegação entre seis salas exclusivamente por portais.
 - Transições suaves com efeito de pixelização.
 - Sistema de depuração integrado ao jogo.
 
@@ -39,10 +39,11 @@ Projeto desenvolvido para a disciplina **Introdução à Programação** do Cent
 | Tecla | Função |
 | :---: | :--- |
 | `F1` | Liga ou desliga o modo de depuração |
-| `F2` | Mostra colisões e aberturas |
+| `F2` | Mostra as tiles sólidas e os contatos do jogador |
 | `F3` | Mostra a grade de tiles |
 | `F4` | Mostra hitboxes e entidades |
-| `F5` | Mostra FPS, posição e estado atual |
+| `F5` | Mostra FPS, posição, tile, direção e estado da transição |
+| `F6` | Invoca o portal da sala atual na frente do jogador |
 
 ## Como executar
 
@@ -72,7 +73,7 @@ python3 main.py
 ## Estrutura do projeto
 
 ```text
-PyZelda/
+RAMargedom/
 ├── assets/
 │   └── images/
 │       ├── andar_baixo.png
@@ -80,8 +81,10 @@ PyZelda/
 │       ├── andar_cima.png
 │       ├── andar_cima.txt
 │       ├── mapa inicial.png
-│       └── portal.png
+│       ├── portal.png
+│       └── sala2.png
 ├── src/
+│   ├── __init__.py
 │   ├── carregador.py
 │   ├── config.py
 │   ├── debug.py
@@ -97,9 +100,9 @@ PyZelda/
 ### Principais módulos
 
 - **`main.py`**: inicializa o Pygame, executa o loop principal e integra movimento, itens, salas e interface.
-- **`src/config.py`**: reúne resolução, FPS, tamanho dos tiles, portas, cores e configurações da transição.
+- **`src/config.py`**: reúne resolução, FPS, tamanho dos tiles, bordas, cores e configurações da transição.
 - **`src/jogador.py`**: implementa movimento, colisões, animações e ataque.
-- **`src/salas.py`**: define o mapa das seis salas, paredes, itens e portal.
+- **`src/salas.py`**: define o mapa das seis salas, paredes internas, itens e portais.
 - **`src/transicao.py`**: aplica o efeito de pixelização durante a troca de salas.
 - **`src/debug.py`**: fornece visualizações do estado interno e das colisões.
 - **`src/carregador.py`**: carrega e recorta os frames dos sprites a partir dos arquivos `.png` e `.txt`.
@@ -109,10 +112,10 @@ PyZelda/
 
 O código inteiro foi dividido nas seguintes partes com o intuito de deixá-lo mais organizado, intuitivo e inteligível:
 
-- **Assets**: Pasta em que se encontram todas as imagens utilizadas pelo jogo. Em `assets/images` estão os sprites do personagem, o fundo da primeira sala e a spritesheet animada do portal. Os arquivos `.txt` associados aos personagens armazenam as coordenadas dos quadros de cada animação.
+- **Assets**: Pasta em que se encontram todas as imagens utilizadas pelo jogo. Em `assets/images` estão os sprites do personagem, os fundos das salas 1 e 2 e a spritesheet animada do portal. Os arquivos `.txt` associados aos personagens armazenam as coordenadas dos quadros de cada animação.
 - **Classes**: Pasta em que estão localizadas as principais entidades e comportamentos do jogo. Os arquivos da pasta `src` são organizados em módulos orientados a objetos e definem o jogador, as salas, os itens, o portal e a transição entre áreas. É nessa divisão que ficam a movimentação do personagem, a animação, as colisões e a criação dos elementos visuais.
-- **Functions**: Funções auxiliares distribuídas pelos módulos de `src`. Em `src/carregador.py`, por exemplo, estão as funções responsáveis por ler coordenadas e carregar os quadros das animações; em `src/salas.py`, por verificar saídas e criar as salas; e em `src/sprites.py`, por separar uma spritesheet em quadros individuais.
-- **Config**: Arquivo em que as constantes gerais são definidas. `src/config.py` concentra o tamanho da tela, os FPS, o tamanho dos tiles, as posições das portas, as cores, os blocos da transição e a duração dos efeitos.
+- **Functions**: Funções auxiliares distribuídas pelos módulos de `src`. Em `src/carregador.py`, por exemplo, estão as funções responsáveis por ler coordenadas e carregar os quadros das animações; em `src/salas.py`, por gerar o mapa e criar as salas; e em `src/sprites.py`, por separar uma spritesheet em quadros individuais.
+- **Config**: Arquivo em que as constantes gerais são definidas. `src/config.py` concentra o tamanho da tela, os FPS, o tamanho dos tiles, as bordas, os portais, as cores, os blocos da transição e a duração dos efeitos.
 - **Engine**: Arquivo principal que faz o jogo entrar em funcionamento contínuo. O `main.py` cria o Pygame, inicializa a tela, produz as salas e executa o loop responsável por ler eventos, atualizar o jogador e os estados da partida e renderizar o cenário a cada frame.
 - **Main**: Arquivo que contém a função `main()` e o bloco `if __name__ == "__main__":`. Esse trecho garante que o jogo seja iniciado apenas quando `main.py` for executado diretamente como programa principal.
 
@@ -124,7 +127,7 @@ O código inteiro foi dividido nas seguintes partes com o intuito de deixá-lo m
 [1] → [2] → [3]
 ```
 
-A **Sala 1** apresenta o mapa inicial, a espada e o portal. Após coletar a espada, o portal é ativado e permite entrar na **Sala 2**. As salas restantes são conectadas pelas bordas abertas do mapa.
+A **Sala 1** apresenta o mapa inicial, a espada e o portal. Ao coletar a espada, o portal é ativado e leva à **Sala 2**. Cada sala seguinte tem um portal para a próxima (`2→3→4→5→6→1`), todos desligados até serem ativados. As bordas são sólidas: não há saídas laterais.
 
 ## Tecnologias utilizadas
 
@@ -156,7 +159,7 @@ if self.pilha_teclas:
 
 ```python
 # src/salas.py: geração do mapa por linha e coluna
-linha_mapa += "#" if eh_borda and not eh_abertura else "."
+linha_mapa += "#" if eh_borda else "."
 ```
 
 ```python
@@ -182,7 +185,7 @@ if self.estado == "saindo":
 - **Direções sem sprites laterais:** como os arquivos disponíveis são voltados para cima e baixo, as animações laterais reutilizam o sprite inferior com espelhamento horizontal.
 - **Arquivos de animação:** coordenadas diferentes podem produzir folhas incompletas ou índices inválidos; o carregador verifica a existência dos arquivos e usa um desenho provisório quando necessário.
 - **Transição entre salas:** a troca precisa ocorrer no pico da pixelização para que o jogador não enxergue a alteração diretamente.
-- **Consistência do posicionamento:** cada entrada de sala precisava posicionar o personagem corretamente dentro da tela, em vez de mantê-lo fora da borda.
+- **Consistência do posicionamento:** o jogador entra sempre no centro da sala de destino, dentro da área livre.
 - **Desempenho:** procurar todas as tiles do mapa a cada movimento seria desnecessário, então `tiles_solidos_perto()` limita a busca aos retângulos próximos.
 
 ### Erros encontrados e soluções
@@ -219,9 +222,9 @@ Pode-se organizar a divisão por módulos, por exemplo:
 | :--- | :--- | :--- |
 | Arquitetura e loop principal | [Nome do integrante] | Inicialização, integração dos módulos e gerenciamento de estados. |
 | Jogador e controles | [Nome do integrante] | Movimento, animações, colisões e ataque. |
-| Salas e mapa | [Nome do integrante] | Configuração das salas, paredes, portas e itens. |
+| Salas e mapa | [Nome do integrante] | Configuração das salas, paredes, portais e itens. |
 | Interface e assets | [Nome do integrante] | Sprites, fundo, portal e apresentação visual. |
-| Transições e depuração | [Nome do integrante] | Pixelização, troca de salas e ferramentas de F1 a F5. |
+| Transições e depuração | [Nome do integrante] | Pixelização, troca de salas e ferramentas de F1 a F6. |
 | Documentação e testes | [Nome do integrante] | README, revisão do código e testes de execução. |
 
 ## Equipe
@@ -234,5 +237,4 @@ Pode-se organizar a divisão por módulos, por exemplo:
 
 ---
 
-Projeto acadêmico desenvolvido no CIn–UFPE.
-```
+Projeto acadêmico desenvolvido no CIn-UFPE.

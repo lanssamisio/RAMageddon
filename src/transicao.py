@@ -16,17 +16,15 @@ class Transicao:
         self.estado = None   # None, "saindo" ou "entrando"
         self.timer = 0.0
         self.sala_destino = None
-        self.lado_entrada = None
 
     @property
     def ativa(self):
         return self.estado is not None
 
-    def iniciar(self, sala_destino, lado_entrada):
+    def iniciar(self, sala_destino):
         self.estado = "saindo"
         self.timer = 0.0
         self.sala_destino = sala_destino
-        self.lado_entrada = lado_entrada
 
     def atualizar(self, dt):
         """Avança o efeito. Devolve True só no instante em que a sala deve mudar."""

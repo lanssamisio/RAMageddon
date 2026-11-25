@@ -1,12 +1,11 @@
-"""Meu Zelda - ponto de entrada. Rode com: python main.py"""
+"""RAMargedom - ponto de entrada. Rode com: python main.py"""
 
 import pygame
 
-from src.carregador import relatorio
-from src.config import LARGURA, ALTURA, FPS, TILE, OPOSTO
+from src.config import LARGURA, ALTURA, FPS, TILE
 from src.debug import Debug
-from src.jogador import Jogador, ANIMACOES
-from src.salas import criar_salas, verificar_saida
+from src.jogador import Jogador
+from src.salas import criar_salas
 from src.transicao import Transicao
 
 
@@ -20,14 +19,10 @@ def desenhar_texto(superficie, fonte, texto, centro_x, y, cor=(255, 255, 255)):
 
 
 def main():
-    # Avisa no terminal se faltou algum arquivo de sprite (ajuda a achar erro).
-    for linha in relatorio([anim["imagem"] for anim in ANIMACOES.values()]):
-        print(linha)
-
     # --- Inicialização ---
     pygame.init()
     tela = pygame.display.set_mode((LARGURA, ALTURA))
-    pygame.display.set_caption("Meu Zelda")
+    pygame.display.set_caption("RAMargedom")
     relogio = pygame.time.Clock()
     fonte = pygame.font.Font(None, 28)
     fonte_grande = pygame.font.Font(None, 36)
@@ -55,14 +50,18 @@ def main():
             if evento.type == pygame.QUIT:
                 rodando = False
             elif evento.type == pygame.KEYDOWN:
-                # F1..F5 são do debug; as outras teclas vão para o jogador.
-                if not debug.tratar_tecla(evento.key):
+                # F1..F6 são do debug; as outras teclas vão para o jogador.
+                if not debug.tratar_tecla(evento.key, sala, jogador):
                     jogador.tratar_evento(evento)
 
         # Limpa teclas de movimento que já foram soltas.
         jogador.atualizar_teclas(pygame.key.get_pressed())
 
         # --- 2. MOVIMENTO E REGRAS ---
+        # O portal continua animado durante a transição; o resto fica pausado.
+        if sala.portal:
+            sala.portal.atualizar(dt)
+
         if not transicao.ativa:
             jogador.atualizar(dt, sala)
 
@@ -71,38 +70,27 @@ def main():
                 if not item.coletado and jogador.rect.colliderect(item.rect):
                     item.coletado = True
                     if item.tipo == "espada":
+                        # Na sala 1, pegar a espada ativa o portal.
                         jogador.tem_espada = True
-                        if sala.portal:
-                            # Na sala 1, pegar a espada ativa o portal.
-                            sala.portal.ativo = True
-                            mensagem = "A espada abriu um portal!"
-                        else:
-                            mensagem = "Voce pegou a espada! Aperte ESPACO para atacar."
+                        sala.portal.ativo = True
+                        mensagem = "A espada abriu um portal!"
                         timer_mensagem = 4.0
 
-            # Portais são objetos animados opcionais da sala.
-            if sala.portal:
-                sala.portal.atualizar(dt)
-                if sala.portal.ativo and jogador.rect.colliderect(sala.portal.rect):
-                    transicao.iniciar(sala.portal.destino, sala.portal.lado_entrada)
-
-            # Se o jogador saiu por uma borda com saída aberta, inicia transição.
-            # Consultamos as saídas uma vez para não refazer o dicionário duas vezes.
-            lado = verificar_saida(jogador.rect)
-            if lado and lado in sala.saidas:
-                transicao.iniciar(sala.saidas[lado], OPOSTO[lado])
+            # Única forma de trocar de sala: entrar no portal ativo.
+            if sala.portal and sala.portal.ativo and jogador.rect.colliderect(sala.portal.rect):
+                transicao.iniciar(sala.portal.destino)
         else:
             # Durante a transição o gameplay pausa e só o efeito é atualizado.
             if transicao.atualizar(dt):
                 # No pico da pixelização a troca de sala não é visível.
                 sala = salas[transicao.sala_destino]
-                jogador.posicionar_na_entrada(transicao.lado_entrada)
+                jogador.posicionar_na_entrada()
 
         if timer_mensagem > 0:
             timer_mensagem -= dt
 
         # --- 3. RENDERIZAÇÃO ---
-        # A ordem importa: sala/fundo primeiro, depois jogador/HUD/mensagens.
+        # Desenha sala, jogador, debug e HUD nessa ordem.
         sala.desenhar(canvas)
         jogador.desenhar(canvas)
         debug.desenhar(canvas, fonte, jogador, sala, relogio, dt, transicao)

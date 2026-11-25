@@ -15,7 +15,7 @@ from .config import ESCALA
 RAIZ = Path(__file__).resolve().parent.parent
 PASTA = RAIZ / "assets" / "images"
 
-# Cache: a mesma imagem é pedida 60 vezes por segundo, mas só precisa ser lida uma.
+# Cache: cada imagem é lida uma vez e reaproveitada nos frames seguintes.
 _cache_quadros = {}
 
 
@@ -56,13 +56,12 @@ def carregar_quadros(nome):
                 # copy() solta a referência à folha inteira.
                 quadro = folha.subsurface(pygame.Rect(x, y, largura, altura)).copy()
 
-                # scale() (e não smoothscale) mantém os pixels nítidos.
+                # scale() mantém os pixels nítidos.
                 quadro = pygame.transform.scale(
                     quadro, (largura * ESCALA, altura * ESCALA)
                 )
 
-                # O fundo branco da arte vira transparência. O PNG também tem
-                # alpha real nas bordas; o colorkey só remove o branco do desenho.
+                # Colorkey transforma o fundo branco da arte em transparência.
                 quadro.set_colorkey((255, 255, 255))
 
                 quadros.append(quadro)
@@ -70,24 +69,6 @@ def carregar_quadros(nome):
             print(f"Aviso: problema em {nome} (.png/.txt): {erro}")
             quadros = None
 
-    # Guardamos até o resultado None: assim não tentamos de novo a cada frame.
+    # O resultado None também é guardado, para não tentar de novo depois.
     _cache_quadros[nome] = quadros
     return quadros
-
-
-def relatorio(nomes):
-    """Linhas de texto dizendo quais arquivos o jogo encontrou.
-
-    Ajuda a achar erro de pasta ou de nome antes de culpar a animação.
-    """
-    linhas = [f"Pasta de imagens: {PASTA}"]
-    if not PASTA.is_dir():
-        linhas.append("  PROBLEMA: essa pasta nao existe!")
-        return linhas
-
-    for nome in nomes:
-        for extensao in (".png", ".txt"):
-            arquivo = PASTA / f"{nome}{extensao}"
-            status = "ok" if arquivo.exists() else "FALTA"
-            linhas.append(f"  [{status}] {arquivo.name}")
-    return linhas

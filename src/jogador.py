@@ -3,7 +3,7 @@
 import pygame
 
 from .carregador import carregar_quadros
-from .config import TILE, LARGURA, ALTURA
+from .config import LARGURA, ALTURA
 
 # --- Animações ---------------------------------------------------------------
 # A chave é a direção (x, y): (0,1) baixo | (0,-1) cima | (-1,0) esquerda | (1,0) direita.
@@ -15,7 +15,7 @@ ANIMACOES = {
     (0, -1): {"imagem": "andar_cima", "parado": 0, "ordem": [2, 0, 4, 0]},
 }
 
-# Enquanto as direções laterais não têm sprite própria, espelhamos a de baixo:
+# Direções laterais usam o sprite de baixo espelhado:
 # (espelhar horizontalmente, espelhar verticalmente).
 ESPELHOS = {
     (-1, 0): (True, False),   # esquerda
@@ -83,8 +83,7 @@ class Jogador:
 
     # --- Lógica ---
     def atualizar(self, dt, sala):
-        # Durante o ataque o jogador fica parado até o timer acabar.
-        # A animação também para, senão o sprite "continua correndo" parado.
+        # Ataque imobiliza o jogador e zera a animação até o timer acabar.
         if self.atacando:
             self.timer_ataque -= dt
             if self.timer_ataque <= 0:
@@ -99,13 +98,11 @@ class Jogador:
             direcao = pygame.Vector2(TECLAS_DIRECAO[self.pilha_teclas[-1]])
             self.virado = direcao.copy()
 
-        # Animação guiada pelo tempo (não por frame): a velocidade do sprite
-        # não muda se o FPS variar.
+        # Animação avança por tempo, independente do FPS.
         self.andando = direcao.length() > 0
         self.tempo_anim = self.tempo_anim + dt if self.andando else 0.0
 
-        # Move no eixo X e resolve colisões antes de mover no eixo Y.
-        # Isso evita que o jogador "grude" em cantos de forma estranha.
+        # Move e resolve colisões no eixo X, depois no eixo Y.
         self.posicao.x += direcao.x * self.VELOCIDADE * dt
         self.rect.x = round(self.posicao.x)
         for tile in sala.tiles_solidos_perto(self.rect):
@@ -128,23 +125,14 @@ class Jogador:
                     self.rect.top = tile.bottom
                 self.posicao.y = self.rect.y
 
-    def posicionar_na_entrada(self, lado):
-        """Coloca o jogador logo dentro da sala, do lado por onde entrou."""
-        if lado == "oeste":
-            self.posicao.x = TILE
-        elif lado == "leste":
-            self.posicao.x = LARGURA - TILE - self.TAMANHO
-        elif lado == "norte":
-            self.posicao.y = TILE
-        elif lado == "sul":
-            self.posicao.y = ALTURA - TILE - self.TAMANHO
-        elif lado == "centro":
-            self.posicao.x = LARGURA // 2 - self.TAMANHO // 2
-            self.posicao.y = ALTURA // 2 - self.TAMANHO // 2
+    def posicionar_na_entrada(self):
+        """Coloca o jogador no centro da sala de destino."""
+        self.posicao.x = LARGURA // 2 - self.TAMANHO // 2
+        self.posicao.y = ALTURA // 2 - self.TAMANHO // 2
         self.rect.topleft = (round(self.posicao.x), round(self.posicao.y))
 
     def hitbox_espada(self):
-        """Área que a espada acerta (usada depois para dar dano nos inimigos)."""
+        """Retângulo da área alcançada pela espada."""
         comprimento, largura = 26, 10
         if self.virado.x != 0:
             area = pygame.Rect(0, 0, comprimento, largura)
@@ -160,7 +148,7 @@ class Jogador:
         return (round(self.virado.x), round(self.virado.y))
 
     def _quadro_atual(self):
-        """Escolhe o sprite da direção atual, espelhando quando ainda não há arte."""
+        """Sprite da direção atual; sem arte própria, usa o de baixo espelhado."""
         chave = self._chave()
         animacao = ANIMACOES.get(chave)
 
@@ -194,13 +182,12 @@ class Jogador:
             posicao = quadro.get_rect(midbottom=(self.rect.centerx, self.rect.bottom + 4))
             superficie.blit(quadro, posicao)
         else:
-            # Sem imagem: quadrado vermelho e um quadradinho amarelo mostrando
-            # para onde o personagem está virado (o fallback do dev).
+            # Sem sprite: quadrado vermelho com marca amarela na direção virada.
             pygame.draw.rect(superficie, (200, 50, 50), self.rect)
             marca = pygame.Vector2(self.rect.center) + self.virado * 10
             pygame.draw.rect(superficie, (255, 220, 0), (marca.x - 4, marca.y - 4, 8, 8))
 
-        # O ataque é mostrado por cima do personagem, sprite ou não.
+        # O ataque é desenhado por cima do personagem.
         if self.atacando:
             area = self.hitbox_espada()
             pygame.draw.rect(superficie, (225, 230, 240), area)

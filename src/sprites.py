@@ -10,8 +10,7 @@ def fatiar_spritesheet(sheet, colunas, linhas):
     A spritesheet deve ter uma grade uniforme: todas as células com o mesmo
     tamanho. Os frames são lidos da esquerda para direita, de cima para baixo.
     """
-    # A divisão inteira descarta sobras: funciona quando a folha é múltipla
-    # da grade (a do portal é 1536x1023, com 4 colunas e 3 linhas).
+    # Divisão inteira: a folha do portal é 1536x1024 (4 colunas x 3 linhas).
     largura_frame = sheet.get_width() // colunas
     altura_frame = sheet.get_height() // linhas
     frames = []
