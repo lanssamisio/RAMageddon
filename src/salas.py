@@ -6,9 +6,15 @@ from pathlib import Path
 import pygame
 
 from .config import (
-    TILE, COLUNAS, LINHAS, LARGURA, ALTURA,
-    ESPESSURA_BORDA_EO, ESPESSURA_BORDA_NS,
-    COR_PAREDE, FRAMES_REPETICAO_PORTAL,
+    ALTURA,
+    COLUNAS,
+    COR_PAREDE,
+    ESPESSURA_BORDA_EO,
+    ESPESSURA_BORDA_NS,
+    FRAMES_REPETICAO_PORTAL,
+    LARGURA,
+    LINHAS,
+    TILE,
 )
 from .sprites import fatiar_spritesheet
 
@@ -219,8 +225,7 @@ class Sala:
         resultado = []
         for linha in range(rect.top // TILE, rect.bottom // TILE + 1):
             for coluna in range(rect.left // TILE, rect.right // TILE + 1):
-                if 0 <= linha < LINHAS and 0 <= coluna < COLUNAS:
-                    if self.mapa[linha][coluna] == "#":
+                if 0 <= linha < LINHAS and 0 <= coluna < COLUNAS and self.mapa[linha][coluna] == "#":
                         resultado.append(pygame.Rect(coluna * TILE, linha * TILE, TILE, TILE))
 
         for parede in self.paredes:

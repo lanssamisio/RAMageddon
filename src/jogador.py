@@ -3,7 +3,7 @@
 import pygame
 
 from .carregador import carregar_quadros
-from .config import LARGURA, ALTURA
+from .config import ALTURA, LARGURA
 
 # --- Animações ---------------------------------------------------------------
 # A chave é a direção (x, y): (0,1) baixo | (0,-1) cima | (-1,0) esquerda | (1,0) direita.

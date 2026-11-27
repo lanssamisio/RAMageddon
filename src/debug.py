@@ -13,7 +13,11 @@ Tudo é desenhado depois do jogo, então nada aqui mexe na física.
 import pygame
 
 from .config import (
-    TILE, LARGURA, ALTURA, ESPESSURA_BORDA_EO, ESPESSURA_BORDA_NS,
+    ALTURA,
+    ESPESSURA_BORDA_EO,
+    ESPESSURA_BORDA_NS,
+    LARGURA,
+    TILE,
 )
 
 # Tecla -> nome da camada. "ativo" é o interruptor geral.

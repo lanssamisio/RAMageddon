@@ -2,7 +2,7 @@
 
 import pygame
 
-from .config import LARGURA, ALTURA, BLOCOS, DURACAO_TRANSICAO
+from .config import ALTURA, BLOCOS, DURACAO_TRANSICAO, LARGURA
 
 
 class Transicao:

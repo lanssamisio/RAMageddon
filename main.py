@@ -2,8 +2,9 @@
 
 import pygame
 
+from src.audio import musica
 from src.carregador import PASTA
-from src.config import LARGURA, ALTURA, FPS, TILE
+from src.config import ALTURA, FPS, LARGURA, TILE
 from src.debug import Debug
 from src.jogador import Jogador
 from src.salas import criar_salas
@@ -40,6 +41,7 @@ def main():
     # --- Inicialização ---
     pygame.init()
     tela = pygame.display.set_mode((LARGURA, ALTURA))
+    musica()
     pygame.display.set_caption("RAMargedom")
     relogio = pygame.time.Clock()
     fonte = pygame.font.Font(None, 28)
@@ -77,10 +79,8 @@ def main():
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 rodando = False
-            elif evento.type == pygame.KEYDOWN:
-                # F1..F6 são do debug; as outras teclas vão para o jogador.
-                if not debug.tratar_tecla(evento.key, sala, jogador):
-                    jogador.tratar_evento(evento)
+            elif evento.type == pygame.KEYDOWN and not debug.tratar_tecla(evento.key, sala, jogador):
+                jogador.tratar_evento(evento)
 
         # Limpa teclas de movimento que já foram soltas.
         jogador.atualizar_teclas(pygame.key.get_pressed())
